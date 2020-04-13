@@ -31,6 +31,7 @@ void main_task(__async__, void* arg) {
 
 int main(int argc, char** argv) {
     __init_async__;
+    printf("sizeof(g_stack_main): %d\n", sizeof(g_stack_main));
     s_task_init_system();
     s_task_create(g_stack_main, sizeof(g_stack_main), main_task, (void*)(size_t)argc);
     s_task_join(__await__, g_stack_main);

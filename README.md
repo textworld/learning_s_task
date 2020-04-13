@@ -83,6 +83,11 @@ typedef struct tag_s_task_t {
 
 在这一节，我们讲解下函数`void s_task_create(void *stack, size_t stack_size, s_task_fn_t task_entry, void *task_arg)`  
 
+`void *stack`应该是指栈的地址,准确地说应该是栈顶的位置(栈在内存中是倒置的)  
+`size_t stack_size`看名字应该是栈的大小  
+`task_entry`是任务函数的入口地址  
+`void *task_arg`是任务的参数  
+
 TODO： 未完待续
 
 ## 协程的切换

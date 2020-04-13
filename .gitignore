@@ -218,3 +218,4 @@ _deps
 # Sonarlint plugin
 
 # End of https://www.gitignore.io/api/cmake,clion,clion+all,intellij+all
+.vscode
