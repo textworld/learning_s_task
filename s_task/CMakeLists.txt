@@ -1,0 +1,1 @@
+add_library(s_task_lib s_task.c s_mutex.c s_event.c s_chan.c s_timer_fast.c s_timer_small.c s_rbtree.c s_list.c ../asm/make_gas.S ../asm/jump_gas.S)
