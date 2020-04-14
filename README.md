@@ -88,6 +88,78 @@ typedef struct tag_s_task_t {
 `task_entry`是任务函数的入口地址  
 `void *task_arg`是任务的参数  
 
+来看下这个汇编写成的函数
+```asm
+_make_fcontext:
+    /* first arg of make_fcontext() == top of context-stack */
+    movq  %rdi, %rax
+
+    /* shift address in RAX to lower 16 byte boundary */
+    andq  $-16, %rax
+
+    /* reserve space for context-data on context-stack */
+    /* on context-function entry: (RSP -0x8) % 16 == 0 */
+    leaq  -0x40(%rax), %rax
+
+    /* third arg of make_fcontext() == address of context-function */
+    /* stored in RBX */
+    movq  %rdx, 0x28(%rax)
+
+    /* save MMX control- and status-word */
+    stmxcsr  (%rax)
+    /* save x87 control-word */
+    fnstcw   0x4(%rax)
+
+    /* compute abs address of label trampoline */
+    leaq  trampoline(%rip), %rcx
+    /* save address of trampoline as return-address for context-function */
+    /* will be entered after calling jump_fcontext() first time */
+    movq  %rcx, 0x38(%rax)
+
+    /* compute abs address of label finish */
+    leaq  finish(%rip), %rcx
+    /* save address of finish as return-address for context-function */
+    /* will be entered after context-function returns */
+    movq  %rcx, 0x30(%rax)
+
+    ret /* return pointer to context-data */
+```
+
+要读懂这个函数，一行行来读
+
+```asm
+ /* first arg of make_fcontext() == top of context-stack */
+movq  %rdi, %rax
+```
+
+`movq`是数据移动指令，比如将数据可以从寄存器到寄存器、内存到寄存器、从寄存器到内存，但是不能内存到内存。 `q`是后缀，表示操作的是64位数据。  
+接着，我们来补充下寄存器的相关知识：
+> X86-64有16个64位寄存器，分别是：%rax，%rbx，%rcx，%rdx，%esi，%edi，%rbp，%rsp，%r8，%r9，%r10，%r11，%r12，%r13，%r14，%r15。
+> - %rax 作为函数返回值使用。
+> - %rsp 栈指针寄存器，指向栈顶
+> - %rdi，%rsi，%rdx，%rcx，%r8，%r9 用作函数参数，依次对应第1参数，第2参数
+> - %rbx，%rbp，%r12，%r13，%14，%15 用作数据存储，遵循被调用者使用规则，简单说就是随便用，调用子函数之前要备份它，以防他被修改  
+> from: https://blog.csdn.net/u013982161/article/details/51347944  
+
+如何在IDEA里面进行汇编语句的调试呢？
+![lldb_register_read](./images/lldb_register_read.png) 
+那么上面这条指令，就是讲第1参数的值作为返回值  
+
+![1](./images/1.png) 
+![2](./images/2.png) 
+![3](./images/3.png) 
+![4](./images/4.png) 
+![5](./images/5.png) 
+![6](./images/6.png) 
+![7](./images/7.png) 
+![8](./images/8.png) 
+![9](./images/9.png) 
+![10](./images/10.png) 
+![11](./images/11.png) 
+![12](./images/12.png) 
+![13](./images/13.png) 
+
+-16的补码为`fffffff0`，对于负数的补码，就是对齐正数的补码按位取反后+1（这里包括符号位）。  那么这里的`andq  $-16, %rax`这条指令，其实就是`%rax & -16`，实际效果就是最后4位变成0，其余不变。暂时不清楚为什么需要这么做。   
 TODO： 未完待续
 
 ## 协程的切换
