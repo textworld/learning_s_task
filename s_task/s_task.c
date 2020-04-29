@@ -209,6 +209,7 @@ void s_task_next(__async__) {
 
 void s_task_yield(__async__) {
     /* Put current task to the waiting list */
+    printf("task yield\n");
     s_list_attach(&g_globals.active_tasks, &g_globals.current_task->node);
     s_task_next(__await__);
     g_globals.current_task->waiting_cancelled = false;
@@ -251,6 +252,7 @@ void s_task_init_system()
 }
 
 void s_task_create(void *stack, size_t stack_size, s_task_fn_t task_entry, void *task_arg) {
+    printf("Task entry OX%p has create\n", stack);
     void *real_stack;
     size_t real_stack_size;
 
@@ -326,9 +328,11 @@ void s_task_context_entry() {
     void *task_arg         = task->task_arg;
 
     __async__ = 0;
+    printf("Task entry: %p\n", task_entry);
     (*task_entry)(__await__, task_arg);
 
     task->closed = true;
+    printf("Task: OX%p has closed\n", task);
     s_event_set(&task->join_event);
     s_task_next(__await__);
 }
